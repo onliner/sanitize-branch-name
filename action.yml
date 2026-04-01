@@ -1,0 +1,55 @@
+name: 'Sanitize Branch Name'
+description: 'Determine the current branch name and sanitize it for artifact naming'
+
+inputs:
+  head_ref:
+    description: 'Optional head ref override for testing'
+    required: false
+    default: ''
+  ref:
+    description: 'Optional ref override for testing'
+    required: false
+    default: ''
+
+outputs:
+  branch_name:
+    description: 'Original branch name'
+    value: ${{ steps.determine_branch.outputs.branch_name }}
+  sanitized_branch_name:
+    description: 'Sanitized branch name with slashes and underscores replaced by dashes'
+    value: ${{ steps.sanitize_branch.outputs.sanitized_branch_name }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Determine Branch
+      id: determine_branch
+      shell: bash
+      run: |
+        BRANCH="${{ inputs.head_ref }}"
+
+        if [ -z "$BRANCH" ]; then
+          BRANCH="${{ inputs.ref }}"
+        fi
+
+        if [ -z "$BRANCH" ]; then
+          BRANCH="${{ github.head_ref }}"
+        fi
+
+        if [ -z "$BRANCH" ]; then
+          BRANCH="${{ github.ref }}"
+        fi
+
+        BRANCH="${BRANCH#refs/heads/}"
+
+        echo "Determined branch: $BRANCH"
+        echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+    - name: Sanitize Branch Name
+      id: sanitize_branch
+      shell: bash
+      run: |
+        SANITIZED_BRANCH_NAME="$(printf '%s' "${{ steps.determine_branch.outputs.branch_name }}" | sed 's#[/_]#-#g')"
+
+        echo "Sanitized branch name: $SANITIZED_BRANCH_NAME"
+        echo "sanitized_branch_name=$SANITIZED_BRANCH_NAME" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,44 @@
+name: Test Sanitize Branch Name
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        case:
+          - head_ref: ''
+            ref: refs/heads/feature/test-branch
+            expected_branch: feature/test-branch
+            expected_sanitized: feature-test-branch
+
+          - head_ref: feature/test_branch
+            ref: refs/pull/1/merge
+            expected_branch: feature/test_branch
+            expected_sanitized: feature-test-branch
+
+          - head_ref: ''
+            ref: refs/heads/main
+            expected_branch: main
+            expected_sanitized: main
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run action
+        id: branch
+        uses: ./
+        with:
+          head_ref: ${{ matrix.case.head_ref }}
+          ref: ${{ matrix.case.ref }}
+
+      - name: Verify outputs
+        shell: bash
+        run: |
+          test "${{ steps.branch.outputs.branch_name }}" = "${{ matrix.case.expected_branch }}"
+          test "${{ steps.branch.outputs.sanitized_branch_name }}" = "${{ matrix.case.expected_sanitized }}"
