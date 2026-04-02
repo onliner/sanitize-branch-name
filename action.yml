@@ -1,6 +1,10 @@
 name: 'Sanitize Branch Name'
 description: 'Determine the current branch name and sanitize it for artifact naming'
 
+branding:
+  icon: command
+  color: green
+
 inputs:
   head_ref:
     description: 'Optional head ref override for testing'
